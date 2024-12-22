@@ -2,6 +2,7 @@
 #include <string>
 #include "sqlite3.h"
 #include <winsock2.h>
+#include <vector>
 
 namespace SQL_Database {
 
@@ -42,5 +43,17 @@ namespace SQL_Database {
     void handleDeletePickupPoint(sqlite3* db, int clientSocket, const std::string& body);
     void handleDisplayPickupPoints(sqlite3* db, int clientSocket);
 
+    //заказы
+    void addOrder(sqlite3* db, const std::string& customerName, int pickupPointID, const std::vector<int>& productIds);
+
+    void handleGetAllOrders(sqlite3* db, int clientSocket);
+    void handlePlaceOrder(sqlite3* db, int clientSocket, const std::string& body);
+    void handleCancelOrder(sqlite3* db, int clientSocket, const std::string& body);
+    void handleSearchOrder(sqlite3* db, int clientSocket, const std::string& body);
+
+    //для загрузки продуктов в бд
+    void initializeProductsTable(sqlite3* db);
+
+    void handleGetProducts(sqlite3* db, int clientSocket);
 }
 
