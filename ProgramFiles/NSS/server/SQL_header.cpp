@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <iomanip>
 #include <unordered_set>
 
 namespace SQL_Database {
@@ -202,6 +203,9 @@ namespace SQL_Database {
         else if (method == "POST" && uri == "/addOrder") {
             handlePlaceOrder(db, clientSocket, body);
         }
+        else if (method == "POST" && uri == "/fastForward") {
+            fastForwardOrdersBy24Hours(db);
+        }
         else if (method == "GET" && uri == "/searchOrder") { //для админа скорее всего просто и при большом количестве заказов
             handleSearchOrder(db, clientSocket, body);
         }
@@ -227,6 +231,9 @@ namespace SQL_Database {
         }
         else if (method == "POST" && uri == "/cancelOrder") {
             handleCancelOrder(db, clientSocket,body);
+        }
+        else if (method == "GET" && uri == "/orderStatus") {
+            handleOrderStatus(db, clientSocket, body);
         }
         else {
             sendHttpResponse(clientSocket, "404 Not Found", "Endpoint not found");
@@ -650,7 +657,6 @@ namespace SQL_Database {
     
     void addOrder(sqlite3* db, const std::string& customerName, int pickupPointID, const std::vector<int>& productIds) {
         try {
-            // Получаем UserID
             int userID = -1;
             std::string getUserSQL = "SELECT UserID FROM Users WHERE Name = ?";
             sqlite3_stmt* stmt;
@@ -668,11 +674,10 @@ namespace SQL_Database {
                 throw std::runtime_error("User not found: " + customerName);
             }
 
-            // Добавляем заказ
             for (int productId : productIds) {
                 std::string insertOrderSQL =
                     "INSERT INTO Orders (UserID, ProductID, OrderDate, DeliveryDate, Status, PickupPointID) "
-                    "VALUES (?, ?, datetime('now'), NULL, 'Pending', ?)";
+                    "VALUES (?, ?, datetime('now', '+3 hours'), datetime('now', '+1 day', '+3 hours'), 'Pending', ?)";
                 if (sqlite3_prepare_v2(db, insertOrderSQL.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
                     sqlite3_bind_int(stmt, 1, userID);
                     sqlite3_bind_int(stmt, 2, productId);
@@ -693,7 +698,48 @@ namespace SQL_Database {
             std::cerr << "Error adding order: " << ex.what() << std::endl;
         }
     }
+    void fastForwardOrdersBy24Hours(sqlite3* db) {
+        try {
+            std::string updateSQL =
+                "UPDATE Orders "
+                "SET OrderDate = datetime(OrderDate, '+1 day'), "
+                "DeliveryDate = datetime(DeliveryDate, '+1 day') "
+                "WHERE DeliveryDate IS NOT NULL";
 
+            char* errorMessage = nullptr;
+            if (sqlite3_exec(db, updateSQL.c_str(), nullptr, nullptr, &errorMessage) != SQLITE_OK) {
+                std::cerr << "Error updating dates: " << errorMessage << std::endl;
+                sqlite3_free(errorMessage);
+            }
+            else {
+                std::cout << "All order dates fast-forwarded by 24 hours." << std::endl;
+            }
+        }
+        catch (const std::exception& ex) {
+            std::cerr << "Error in fastForwardOrdersBy24Hours: " << ex.what() << std::endl;
+        }
+    }
+    void markOrdersAsDelivered(sqlite3* db) {
+        try {
+            // SQL-запрос для изменения статуса всех заказов на "Delivered"
+            std::string updateSQL =
+                "UPDATE Orders "
+                "SET Status = 'Delivered' "
+                "WHERE Status != 'Delivered'";
+
+            char* errorMessage = nullptr;
+            if (sqlite3_exec(db, updateSQL.c_str(), nullptr, nullptr, &errorMessage) != SQLITE_OK) {
+                std::cerr << "Error updating order status: " << errorMessage << std::endl;
+                sqlite3_free(errorMessage);
+            }
+            else {
+                std::cout << "All orders marked as delivered." << std::endl;
+            }
+        }
+        catch (const std::exception& ex) {
+            std::cerr << "Error in markOrdersAsDelivered: " << ex.what() << std::endl;
+        }
+    }
 
     void handlePlaceOrder(sqlite3* db, int clientSocket, const std::string& body) {
         try {
@@ -721,6 +767,29 @@ namespace SQL_Database {
 
             // Вызываем функцию добавления заказа
             try {
+                // Проверяем, существует ли пикап-поинт с указанным ID
+                std::string checkPickupPointSQL = "SELECT COUNT(*) FROM PickupPoints WHERE PickupPointID = ?";
+                sqlite3_stmt* stmt;
+
+                if (sqlite3_prepare_v2(db, checkPickupPointSQL.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+                    sendHttpResponse(clientSocket, "500 Internal Server Error", "Failed to prepare SQL statement for pickup point check.");
+                    return;
+                }
+
+                sqlite3_bind_int(stmt, 1, pickupPointId);
+
+                int pickupPointExists = 0;
+                if (sqlite3_step(stmt) == SQLITE_ROW) {
+                    pickupPointExists = sqlite3_column_int(stmt, 0);
+                }
+                sqlite3_finalize(stmt);
+
+                if (pickupPointExists == 0) {
+                    sendHttpResponse(clientSocket, "400 Bad Request", "Invalid PickupPointID: No pickup point found with the given ID.");
+                    return;
+                }
+
+                // Если пикап-поинт существует, продолжаем обработку заказа
                 addOrder(db, customerName, pickupPointId, { productId });
 
                 // Отправляем успешный ответ клиенту
@@ -985,5 +1054,89 @@ namespace SQL_Database {
             sendHttpResponse(clientSocket, "500 Internal Server Error", "Failed to retrieve products.");
         }
     }
+
+
+    std::time_t parseDateTime(const std::string& dateTimeStr) {
+        // Преобразуем строку времени в std::tm
+        std::tm tm = {};
+        std::istringstream ss(dateTimeStr);
+        ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+        if (ss.fail()) {
+            throw std::runtime_error("Failed to parse date/time: " + dateTimeStr);
+        }
+        // Преобразуем std::tm в time_t
+        return std::mktime(&tm);
+    }
+
+    void handleOrderStatus(sqlite3* db, int clientSocket, const std::string& body) {
+        std::string orderIdStr = extractData(body, "orderId");
+
+        if (orderIdStr.empty() || !isNumeric(orderIdStr)) {
+            sendHttpResponse(clientSocket, "400 Bad Request", "Missing or invalid 'orderId'");
+            return;
+        }
+
+        int orderId = std::stoi(orderIdStr);
+
+        // SQL-запрос для получения времени отправления и прибытия
+        const char* sqlSelect = "SELECT OrderDate, DeliveryDate FROM Orders WHERE OrderID = ?;";
+        sqlite3_stmt* stmt;
+
+        if (sqlite3_prepare_v2(db, sqlSelect, -1, &stmt, nullptr) != SQLITE_OK) {
+            std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+            sendHttpResponse(clientSocket, "500 Internal Server Error", "Database error");
+            return;
+        }
+
+        sqlite3_bind_int(stmt, 1, orderId);
+
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            const char* departureTimeStr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+            const char* arrivalTimeStr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+
+            if (!departureTimeStr) {
+                sendHttpResponse(clientSocket, "404 Not Found", "Order date not found");
+                sqlite3_finalize(stmt);
+                return;
+            }
+
+            try {
+                std::time_t departureTime = parseDateTime(departureTimeStr);
+                std::time_t arrivalTime = arrivalTimeStr ? parseDateTime(arrivalTimeStr) : 0;
+
+                std::time_t currentTime = std::time(nullptr);
+
+                double progress = 0.0;
+                if (arrivalTime == 0) {
+                    sendHttpResponse(clientSocket, "200 OK", "Delivery date not set");
+                }
+                else if (currentTime >= arrivalTime) {
+                    progress = 100.0;
+                }
+                else if (currentTime > departureTime) {
+                    progress = (static_cast<double>(currentTime - departureTime) /
+                        static_cast<double>(arrivalTime - departureTime)) *
+                        100.0;
+                }
+
+                std::ostringstream response;
+                response << "Order progress: " << progress << "%";
+
+                sendHttpResponse(clientSocket, "200 OK", response.str());
+            }
+            catch (const std::exception& e) {
+                std::cerr << "Error parsing times: " << e.what() << std::endl;
+                sendHttpResponse(clientSocket, "500 Internal Server Error", "Failed to parse times");
+            }
+        }
+        else {
+            sendHttpResponse(clientSocket, "404 Not Found", "Order not found");
+        }
+
+        sqlite3_finalize(stmt);
+    }
+
+
+
 
 }

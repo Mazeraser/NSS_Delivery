@@ -3,6 +3,8 @@
 #include "sqlite3.h"
 #include <winsock2.h>
 #include <vector>
+#include <iomanip>
+#include <ctime>
 
 namespace SQL_Database {
 
@@ -45,6 +47,8 @@ namespace SQL_Database {
 
     //заказы
     void addOrder(sqlite3* db, const std::string& customerName, int pickupPointID, const std::vector<int>& productIds);
+    void fastForwardOrdersBy24Hours(sqlite3* db);
+    void markOrdersAsDelivered(sqlite3* db);
 
     void handleGetAllOrders(sqlite3* db, int clientSocket);
     void handlePlaceOrder(sqlite3* db, int clientSocket, const std::string& body);
@@ -55,5 +59,9 @@ namespace SQL_Database {
     void initializeProductsTable(sqlite3* db);
 
     void handleGetProducts(sqlite3* db, int clientSocket);
+
+
+    std::time_t parseDateTime(const std::string& dateTimeStr);
+    void handleOrderStatus(sqlite3* db, int clientSocket, const std::string& body);
 }
 
