@@ -3,9 +3,9 @@
 
 // Конструктор
 Order::Order(int orderId, const Product& prod, const std::string& client, const std::string& date,
-    const std::string& orderStatus, int qty)
+    const std::string& orderStatus, const Point DeliveryPoint, int qty)
     : order_id(orderId), product(prod), client_name(client), order_date(date),
-    status(orderStatus), quantity(qty), is_ready(false) {}
+    status(orderStatus), quantity(qty), is_ready(false), delivery_point(DeliveryPoint){}
 
 // Геттеры
 int Order::getOrderId() const { return order_id; }
@@ -29,6 +29,14 @@ int Order::getOrderQuantity() const {
     return quantity;
 }
 
+Point Order::getDeliveryPoint() const {
+    return delivery_point;
+}
+
+void Order::set_time(double Time) {
+    order_time = Time;
+}
+
 // Формирование информации о заказе
 std::string Order::getOrderInfo() const {
     std::ostringstream oss;
@@ -38,9 +46,15 @@ std::string Order::getOrderInfo() const {
         << "Дата заказа: " << order_date << "\n"
         << "Статус: " << status << "\n"
         << "Количество: " << quantity << "\n"
-        << "Готовность: " << (is_ready ? "Да" : "Нет") << "\n";
+        << "Готовность: " << (is_ready ? "Да" : "Нет") << "\n"
+        << "Время доставки: " << order_time << "\n";
     return oss.str();
 }
 
+void Order::set_courier(int courierId) {
+    courier_id = courierId;
+}
 
-
+int Order::get_courier() const {
+    return courier_id;
+}

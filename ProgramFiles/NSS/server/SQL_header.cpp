@@ -1,4 +1,4 @@
-#include "../server/SQL_header.h"
+п»ї#include "../server/SQL_header.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -7,7 +7,8 @@
 #include <unordered_set>
 
 namespace SQL_Database {
-
+    //TODO: Р РµР°Р»РёР·РѕРІР°С‚СЊ РЅР°Р·РЅР°С‡РµРЅРёРµ Р·Р°РєР°Р·РѕРІ
+    //TODO: Р РµР°Р»РёР·РѕРІР°С‚СЊ СЃРѕР·РґР°РЅРёРµ/РёРЅС‹Рµ РѕРїРµСЂР°С†РёРё РєСѓСЂСЊРµСЂРѕРІ
     void addUser(sqlite3* db, const std::string& name, const std::string& password) {
         const char* sqlInsert = "INSERT INTO Users (Name, Password) VALUES (?, ?);";
         sqlite3_stmt* stmt;
@@ -102,7 +103,7 @@ namespace SQL_Database {
         sqlite3_finalize(stmt);
     }
     void handleGetUserOrders(sqlite3* db, int clientSocket, const std::string& body) {
-        // Извлекаем ID пользователя из тела запроса
+        // РР·РІР»РµРєР°РµРј ID РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР· С‚РµР»Р° Р·Р°РїСЂРѕСЃР°
         std::string userIdStr = extractData(body, "userId");
 
         if (userIdStr.empty()) {
@@ -113,7 +114,7 @@ namespace SQL_Database {
         try {
             int userId = std::stoi(userIdStr);
 
-            // Создаем SQL-запрос с JOIN для получения заказов пользователя и имени товара
+            // РЎРѕР·РґР°РµРј SQL-Р·Р°РїСЂРѕСЃ СЃ JOIN РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ Р·Р°РєР°Р·РѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РёРјРµРЅРё С‚РѕРІР°СЂР°
             std::string sql =
                 "SELECT Orders.OrderID, Products.Name AS ProductName, Orders.OrderDate, "
                 "Orders.DeliveryDate, Orders.Status, Orders.PickupPointID "
@@ -127,10 +128,10 @@ namespace SQL_Database {
                 return;
             }
 
-            // Привязываем значение userId к запросу
+            // РџСЂРёРІСЏР·С‹РІР°РµРј Р·РЅР°С‡РµРЅРёРµ userId Рє Р·Р°РїСЂРѕСЃСѓ
             sqlite3_bind_int(stmt, 1, userId);
 
-            // Создаем таблицу в виде строки
+            // РЎРѕР·РґР°РµРј С‚Р°Р±Р»РёС†Сѓ РІ РІРёРґРµ СЃС‚СЂРѕРєРё
             std::string response;
             response += "-------------------------------------------------------------------------------\n";
             response += "| OrderID | ProductName       | OrderDate   | DeliveryDate | Status    | PickupPointID |\n";
@@ -153,7 +154,7 @@ namespace SQL_Database {
 
                 int pickupPointId = sqlite3_column_int(stmt, 5);
 
-                // Форматируем строку таблицы
+                // Р¤РѕСЂРјР°С‚РёСЂСѓРµРј СЃС‚СЂРѕРєСѓ С‚Р°Р±Р»РёС†С‹
                 char row[256];
                 snprintf(row, sizeof(row), "| %-7d | %-16s | %-11s | %-12s | %-8s | %-13d |\n",
                     orderId, productNameStr.c_str(), orderDateStr.c_str(), deliveryDateStr.c_str(), statusStr.c_str(), pickupPointId);
@@ -182,9 +183,9 @@ namespace SQL_Database {
         method = httpRequest.substr(0, methodEnd);
         uri = httpRequest.substr(methodEnd + 1, uriEnd - methodEnd - 1);
         if (headerEnd != std::string::npos) {
-            body = httpRequest.substr(headerEnd + 4); // Тело запроса после заголовков
+            body = httpRequest.substr(headerEnd + 4); // РўРµР»Рѕ Р·Р°РїСЂРѕСЃР° РїРѕСЃР»Рµ Р·Р°РіРѕР»РѕРІРєРѕРІ
         }
-        //для пользователей
+        //РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
         if (method == "POST" && uri == "/addUser") {
             handleAddUser(db, clientSocket, body);
         }
@@ -206,10 +207,10 @@ namespace SQL_Database {
         else if (method == "POST" && uri == "/fastForward") {
             fastForwardOrdersBy24Hours(db);
         }
-        else if (method == "GET" && uri == "/searchOrder") { //для админа скорее всего просто и при большом количестве заказов
+        else if (method == "GET" && uri == "/searchOrder") { //РґР»СЏ Р°РґРјРёРЅР° СЃРєРѕСЂРµРµ РІСЃРµРіРѕ РїСЂРѕСЃС‚Рѕ Рё РїСЂРё Р±РѕР»СЊС€РѕРј РєРѕР»РёС‡РµСЃС‚РІРµ Р·Р°РєР°Р·РѕРІ
             handleSearchOrder(db, clientSocket, body);
         }
-        //для пунктов выдачи
+        //РґР»СЏ РїСѓРЅРєС‚РѕРІ РІС‹РґР°С‡Рё
         else if (method == "POST" && uri == "/addPickupPoint") {
             handleAddPickupPoint(db, clientSocket, body);
         }
@@ -221,6 +222,17 @@ namespace SQL_Database {
         }
         else if (method == "GET" && uri == "/displayPickupPoints") {
             handleDisplayPickupPoints(db, clientSocket);
+        }
+
+        // РќРѕРІС‹Рµ СЌРЅРґРїРѕРёРЅС‚С‹ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РєСѓСЂСЊРµСЂР°РјРё
+        else if (method == "POST" && uri == "/addCourier") {
+            handleAddCourier(db, clientSocket, body);
+        }
+        else if (method == "POST" && uri == "/assignOrder") {
+            handleAssignOrder(db, clientSocket, body);
+        }
+        else if (method == "POST" && uri == "/completeOrder") {
+            handleCompleteOrder(db, clientSocket, body);
         }
 
         else if (method == "GET" && uri == "/getAllOrders") {
@@ -306,21 +318,21 @@ namespace SQL_Database {
         sqlite3_finalize(stmt);
     }
 
-    // Функция для разбиения SQL-скрипта на отдельные команды
+    // Р¤СѓРЅРєС†РёСЏ РґР»СЏ СЂР°Р·Р±РёРµРЅРёСЏ SQL-СЃРєСЂРёРїС‚Р° РЅР° РѕС‚РґРµР»СЊРЅС‹Рµ РєРѕРјР°РЅРґС‹
     std::vector<std::string> splitSQLCommands(const std::string& script) {
         std::vector<std::string> commands;
         std::string command;
         std::istringstream stream(script);
 
         while (std::getline(stream, command, ';')) {
-            command = command + ";"; // Восстанавливаем разделитель
+            command = command + ";"; // Р’РѕСЃСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЂР°Р·РґРµР»РёС‚РµР»СЊ
             if (!command.empty() && command != ";") {
                 commands.push_back(command);
             }
         }
         return commands;
     }
-    // Исполнение SQL-скрипта
+    // РСЃРїРѕР»РЅРµРЅРёРµ SQL-СЃРєСЂРёРїС‚Р°
     void executeSQLScript(sqlite3* db, const std::string& scriptPath) {
         std::ifstream scriptFile(scriptPath);
         if (!scriptFile.is_open()) {
@@ -332,7 +344,7 @@ namespace SQL_Database {
         buffer << scriptFile.rdbuf();
         std::string sqlScript = buffer.str();
 
-        // Разделение SQL-команд
+        // Р Р°Р·РґРµР»РµРЅРёРµ SQL-РєРѕРјР°РЅРґ
         auto commands = splitSQLCommands(sqlScript);
 
         char* errorMessage = nullptr;
@@ -373,7 +385,7 @@ namespace SQL_Database {
         }
     }
 
-    //для пунктов выдачи
+    //РґР»СЏ РїСѓРЅРєС‚РѕРІ РІС‹РґР°С‡Рё
     void addPickupPoint(sqlite3* db, const std::string& name, const std::string& address, double coordX, double coordY) {
         const char* sqlInsert = "INSERT INTO PickupPoints (Name, Address, CoordX, CoordY) VALUES (?, ?, ?, ?);";
         sqlite3_stmt* stmt;
@@ -469,15 +481,15 @@ namespace SQL_Database {
     }
 
 
-    //вспомогательные для пунктов выдачи
+    //РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ РґР»СЏ РїСѓРЅРєС‚РѕРІ РІС‹РґР°С‡Рё
     void handleAddPickupPoint(sqlite3* db, int clientSocket, const std::string& body) {
-        // Извлекаем данные из тела запроса
+        // РР·РІР»РµРєР°РµРј РґР°РЅРЅС‹Рµ РёР· С‚РµР»Р° Р·Р°РїСЂРѕСЃР°
         std::string name = extractData(body, "name");
         std::string address = extractData(body, "adress");
         std::string coordXStr = extractData(body, "coordX");
         std::string coordYStr = extractData(body, "coordY");
 
-        // Проверяем обязательные поля
+        // РџСЂРѕРІРµСЂСЏРµРј РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Рµ РїРѕР»СЏ
         if (name.empty()) {
             sendHttpResponse(clientSocket, "400 Bad Request", "Missing or invalid 'name'");
             return;
@@ -495,11 +507,11 @@ namespace SQL_Database {
             return;
         }
 
-        // Преобразуем координаты в числа
+        // РџСЂРµРѕР±СЂР°Р·СѓРµРј РєРѕРѕСЂРґРёРЅР°С‚С‹ РІ С‡РёСЃР»Р°
         double coordX = std::stod(coordXStr);
         double coordY = std::stod(coordYStr);
 
-        // Выполняем добавление в базу данных
+        // Р’С‹РїРѕР»РЅСЏРµРј РґРѕР±Р°РІР»РµРЅРёРµ РІ Р±Р°Р·Сѓ РґР°РЅРЅС‹С…
         const char* sqlInsert = "INSERT INTO PickupPoints (Name, Address, CoordX, CoordY) VALUES (?, ?, ?, ?);";
         sqlite3_stmt* stmt;
 
@@ -544,7 +556,7 @@ namespace SQL_Database {
             double coordX = std::stod(coordXStr);
             double coordY = std::stod(coordYStr);
 
-            // Редактирование пункта ПВЗ
+            // Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РїСѓРЅРєС‚Р° РџР’Р—
             editPickupPoint(db, id, name, adress, coordX, coordY);
             sendHttpResponse(clientSocket, "200 OK", "Pickup point updated successfully");
         }
@@ -593,10 +605,10 @@ namespace SQL_Database {
         sqlite3_finalize(stmt);
     }
 
-    //заказы
+    //Р·Р°РєР°Р·С‹
     void handleGetAllOrders(sqlite3* db, int clientSocket) {
         try {
-            // SQL-запрос для получения всех записей из таблицы Orders
+            // SQL-Р·Р°РїСЂРѕСЃ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РІСЃРµС… Р·Р°РїРёСЃРµР№ РёР· С‚Р°Р±Р»РёС†С‹ Orders
             std::string sql = R"(
         SELECT OrderID, UserID, ProductID, OrderDate, DeliveryDate, Status, PickupPointID
         FROM Orders;
@@ -608,14 +620,14 @@ namespace SQL_Database {
                 return;
             }
 
-            // Формируем табличный ответ
+            // Р¤РѕСЂРјРёСЂСѓРµРј С‚Р°Р±Р»РёС‡РЅС‹Р№ РѕС‚РІРµС‚
             std::string response;
             response += "-------------------------------------------------------------------------------\n";
             response += "| OrderID | UserID | ProductID | OrderDate       | DeliveryDate   | Status    | PickupPointID |\n";
             response += "-------------------------------------------------------------------------------\n";
 
             while (sqlite3_step(stmt) == SQLITE_ROW) {
-                // Извлекаем данные из строки результата
+                // РР·РІР»РµРєР°РµРј РґР°РЅРЅС‹Рµ РёР· СЃС‚СЂРѕРєРё СЂРµР·СѓР»СЊС‚Р°С‚Р°
                 int orderId = sqlite3_column_int(stmt, 0);
                 int userId = sqlite3_column_int(stmt, 1);
                 int productId = sqlite3_column_int(stmt, 2);
@@ -631,7 +643,7 @@ namespace SQL_Database {
 
                 int pickupPointId = sqlite3_column_int(stmt, 6);
 
-                // Форматируем строку таблицы
+                // Р¤РѕСЂРјР°С‚РёСЂСѓРµРј СЃС‚СЂРѕРєСѓ С‚Р°Р±Р»РёС†С‹
                 char row[256];
                 snprintf(row, sizeof(row), "| %-7d | %-6d | %-9d | %-15s | %-14s | %-8s | %-13d |\n",
                     orderId, userId, productId, orderDateStr.c_str(), deliveryDateStr.c_str(), statusStr.c_str(), pickupPointId);
@@ -642,8 +654,8 @@ namespace SQL_Database {
 
             sqlite3_finalize(stmt);
 
-            // Если таблица пустая, отправляем соответствующее сообщение
-            if (response.size() <= 81) { // Минимальная длина таблицы с заголовками
+            // Р•СЃР»Рё С‚Р°Р±Р»РёС†Р° РїСѓСЃС‚Р°СЏ, РѕС‚РїСЂР°РІР»СЏРµРј СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РµРµ СЃРѕРѕР±С‰РµРЅРёРµ
+            if (response.size() <= 81) { // РњРёРЅРёРјР°Р»СЊРЅР°СЏ РґР»РёРЅР° С‚Р°Р±Р»РёС†С‹ СЃ Р·Р°РіРѕР»РѕРІРєР°РјРё
                 sendHttpResponse(clientSocket, "200 OK", "No orders found.");
             }
             else {
@@ -721,7 +733,7 @@ namespace SQL_Database {
     }
     void markOrdersAsDelivered(sqlite3* db) {
         try {
-            // SQL-запрос для изменения статуса всех заказов на "Delivered"
+            // SQL-Р·Р°РїСЂРѕСЃ РґР»СЏ РёР·РјРµРЅРµРЅРёСЏ СЃС‚Р°С‚СѓСЃР° РІСЃРµС… Р·Р°РєР°Р·РѕРІ РЅР° "Delivered"
             std::string updateSQL =
                 "UPDATE Orders "
                 "SET Status = 'Delivered' "
@@ -743,18 +755,18 @@ namespace SQL_Database {
 
     void handlePlaceOrder(sqlite3* db, int clientSocket, const std::string& body) {
         try {
-            // Извлекаем данные из тела запроса
+            // РР·РІР»РµРєР°РµРј РґР°РЅРЅС‹Рµ РёР· С‚РµР»Р° Р·Р°РїСЂРѕСЃР°
             std::string customerName = extractData(body, "customerName");
             std::string pickupPointIdStr = extractData(body, "pickupPointId");
             std::string productIdStr = extractData(body, "productId");
 
-            // Проверяем корректность данных
+            // РџСЂРѕРІРµСЂСЏРµРј РєРѕСЂСЂРµРєС‚РЅРѕСЃС‚СЊ РґР°РЅРЅС‹С…
             if (customerName.empty() || pickupPointIdStr.empty() || productIdStr.empty()) {
                 sendHttpResponse(clientSocket, "400 Bad Request", "Missing required fields: customerName, pickupPointId, or productId.");
                 return;
             }
 
-            // Преобразуем идентификаторы из строк в числа
+            // РџСЂРµРѕР±СЂР°Р·СѓРµРј РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂС‹ РёР· СЃС‚СЂРѕРє РІ С‡РёСЃР»Р°
             int pickupPointId = 0, productId = 0;
             try {
                 pickupPointId = std::stoi(pickupPointIdStr);
@@ -765,9 +777,9 @@ namespace SQL_Database {
                 return;
             }
 
-            // Вызываем функцию добавления заказа
+            // Р’С‹Р·С‹РІР°РµРј С„СѓРЅРєС†РёСЋ РґРѕР±Р°РІР»РµРЅРёСЏ Р·Р°РєР°Р·Р°
             try {
-                // Проверяем, существует ли пикап-поинт с указанным ID
+                // РџСЂРѕРІРµСЂСЏРµРј, СЃСѓС‰РµСЃС‚РІСѓРµС‚ Р»Рё РїРёРєР°Рї-РїРѕРёРЅС‚ СЃ СѓРєР°Р·Р°РЅРЅС‹Рј ID
                 std::string checkPickupPointSQL = "SELECT COUNT(*) FROM PickupPoints WHERE PickupPointID = ?";
                 sqlite3_stmt* stmt;
 
@@ -789,10 +801,10 @@ namespace SQL_Database {
                     return;
                 }
 
-                // Если пикап-поинт существует, продолжаем обработку заказа
+                // Р•СЃР»Рё РїРёРєР°Рї-РїРѕРёРЅС‚ СЃСѓС‰РµСЃС‚РІСѓРµС‚, РїСЂРѕРґРѕР»Р¶Р°РµРј РѕР±СЂР°Р±РѕС‚РєСѓ Р·Р°РєР°Р·Р°
                 addOrder(db, customerName, pickupPointId, { productId });
 
-                // Отправляем успешный ответ клиенту
+                // РћС‚РїСЂР°РІР»СЏРµРј СѓСЃРїРµС€РЅС‹Р№ РѕС‚РІРµС‚ РєР»РёРµРЅС‚Сѓ
                 sendHttpResponse(clientSocket, "200 OK", "Order placed successfully.");
             }
             catch (const std::exception& ex) {
@@ -807,7 +819,7 @@ namespace SQL_Database {
     }
 
     void handleCancelOrder(sqlite3* db, int clientSocket, const std::string& body) {
-        // Извлекаем ID заказа из тела запроса
+        // РР·РІР»РµРєР°РµРј ID Р·Р°РєР°Р·Р° РёР· С‚РµР»Р° Р·Р°РїСЂРѕСЃР°
         std::string orderIdStr = extractData(body, "orderId");
 
         if (orderIdStr.empty()) {
@@ -818,7 +830,7 @@ namespace SQL_Database {
         try {
             int orderId = std::stoi(orderIdStr);
 
-            // Создаем SQL-запрос для обновления статуса заказа
+            // РЎРѕР·РґР°РµРј SQL-Р·Р°РїСЂРѕСЃ РґР»СЏ РѕР±РЅРѕРІР»РµРЅРёСЏ СЃС‚Р°С‚СѓСЃР° Р·Р°РєР°Р·Р°
             std::string sql = "UPDATE Orders SET Status = 'Cancelled' WHERE OrderID = ?";
 
             sqlite3_stmt* stmt;
@@ -827,20 +839,20 @@ namespace SQL_Database {
                 return;
             }
 
-            // Привязываем значение orderId к запросу
+            // РџСЂРёРІСЏР·С‹РІР°РµРј Р·РЅР°С‡РµРЅРёРµ orderId Рє Р·Р°РїСЂРѕСЃСѓ
             sqlite3_bind_int(stmt, 1, orderId);
 
-            // Выполняем запрос
+            // Р’С‹РїРѕР»РЅСЏРµРј Р·Р°РїСЂРѕСЃ
             if (sqlite3_step(stmt) == SQLITE_DONE) {
-                // Успешное выполнение
+                // РЈСЃРїРµС€РЅРѕРµ РІС‹РїРѕР»РЅРµРЅРёРµ
                 sendHttpResponse(clientSocket, "200 OK", "Order cancelled successfully");
             }
             else {
-                // Ошибка выполнения
+                // РћС€РёР±РєР° РІС‹РїРѕР»РЅРµРЅРёСЏ
                 sendHttpResponse(clientSocket, "500 Internal Server Error", "Failed to cancel the order");
             }
 
-            // Освобождаем ресурсы
+            // РћСЃРІРѕР±РѕР¶РґР°РµРј СЂРµСЃСѓСЂСЃС‹
             sqlite3_finalize(stmt);
         }
         catch (const std::exception& e) {
@@ -849,17 +861,17 @@ namespace SQL_Database {
     }
     void handleSearchOrder(sqlite3* db, int clientSocket, const std::string& body) {
         try {
-            // Извлекаем поле поиска и значение из тела запроса
+            // РР·РІР»РµРєР°РµРј РїРѕР»Рµ РїРѕРёСЃРєР° Рё Р·РЅР°С‡РµРЅРёРµ РёР· С‚РµР»Р° Р·Р°РїСЂРѕСЃР°
             std::string searchField = extractData(body, "field");
             std::string searchValue = extractData(body, "value");
 
-            // Проверяем корректность данных
+            // РџСЂРѕРІРµСЂСЏРµРј РєРѕСЂСЂРµРєС‚РЅРѕСЃС‚СЊ РґР°РЅРЅС‹С…
             if (searchField.empty() || searchValue.empty()) {
                 sendHttpResponse(clientSocket, "400 Bad Request", "Missing required fields: field or value.");
                 return;
             }
 
-            // Разрешенные поля для поиска
+            // Р Р°Р·СЂРµС€РµРЅРЅС‹Рµ РїРѕР»СЏ РґР»СЏ РїРѕРёСЃРєР°
             std::unordered_set<std::string> allowedFields = {
                 "OrderID", "UserID", "ProductID", "OrderDate", "DeliveryDate", "Status", "PickupPointID"
             };
@@ -869,7 +881,7 @@ namespace SQL_Database {
                 return;
             }
 
-            // SQL-запрос для поиска
+            // SQL-Р·Р°РїСЂРѕСЃ РґР»СЏ РїРѕРёСЃРєР°
             std::string sql = "SELECT OrderID, UserID, ProductID, OrderDate, DeliveryDate, Status, PickupPointID FROM Orders WHERE " + searchField + " = ?;";
 
             sqlite3_stmt* stmt;
@@ -878,7 +890,7 @@ namespace SQL_Database {
                 return;
             }
 
-            // Привязываем значение к запросу
+            // РџСЂРёРІСЏР·С‹РІР°РµРј Р·РЅР°С‡РµРЅРёРµ Рє Р·Р°РїСЂРѕСЃСѓ
             if (searchField == "OrderID" || searchField == "UserID" || searchField == "ProductID" || searchField == "PickupPointID") {
                 sqlite3_bind_int(stmt, 1, std::stoi(searchValue));
             }
@@ -886,7 +898,7 @@ namespace SQL_Database {
                 sqlite3_bind_text(stmt, 1, searchValue.c_str(), -1, SQLITE_STATIC);
             }
 
-            // Формируем табличный ответ
+            // Р¤РѕСЂРјРёСЂСѓРµРј С‚Р°Р±Р»РёС‡РЅС‹Р№ РѕС‚РІРµС‚
             std::string response;
             response += "-------------------------------------------------------------------------------\n";
             response += "| OrderID | UserID | ProductID | OrderDate       | DeliveryDate   | Status    | PickupPointID |\n";
@@ -912,7 +924,7 @@ namespace SQL_Database {
 
                 int pickupPointId = sqlite3_column_int(stmt, 6);
 
-                // Форматируем строку таблицы
+                // Р¤РѕСЂРјР°С‚РёСЂСѓРµРј СЃС‚СЂРѕРєСѓ С‚Р°Р±Р»РёС†С‹
                 char row[256];
                 snprintf(row, sizeof(row), "| %-7d | %-6d | %-9d | %-15s | %-14s | %-8s | %-13d |\n",
                     orderId, userId, productId, orderDateStr.c_str(), deliveryDateStr.c_str(), statusStr.c_str(), pickupPointId);
@@ -938,13 +950,13 @@ namespace SQL_Database {
     void initializeProductsTable(sqlite3* db) {
         char* errorMessage = nullptr;
 
-        // Открываем (или создаём) базу данных
+        // РћС‚РєСЂС‹РІР°РµРј (РёР»Рё СЃРѕР·РґР°С‘Рј) Р±Р°Р·Сѓ РґР°РЅРЅС‹С…
         if (sqlite3_open("sql_db.db", &db) != SQLITE_OK) {
             std::cerr << "Failed to open database: " << sqlite3_errmsg(db) << std::endl;
             return;
         }
 
-        // Проверяем, есть ли записи в таблице
+        // РџСЂРѕРІРµСЂСЏРµРј, РµСЃС‚СЊ Р»Рё Р·Р°РїРёСЃРё РІ С‚Р°Р±Р»РёС†Рµ
         const char* checkTableSQL = "SELECT COUNT(*) FROM Products;";
         sqlite3_stmt* stmt;
         int count = 0;
@@ -961,7 +973,7 @@ namespace SQL_Database {
             return;
         }
 
-        // Если таблица пуста, добавляем данные
+        // Р•СЃР»Рё С‚Р°Р±Р»РёС†Р° РїСѓСЃС‚Р°, РґРѕР±Р°РІР»СЏРµРј РґР°РЅРЅС‹Рµ
         if (count == 0) {
             const char* insertDataSQL = R"(
             INSERT INTO Products (Name, Description, Category, Price)
@@ -1006,7 +1018,7 @@ namespace SQL_Database {
             }
         }
 
-        // Закрываем базу данных
+        // Р—Р°РєСЂС‹РІР°РµРј Р±Р°Р·Сѓ РґР°РЅРЅС‹С…
         sqlite3_close(db);
     }
 
@@ -1020,11 +1032,11 @@ namespace SQL_Database {
                 return;
             }
 
-            // Заголовок таблицы
+            // Р—Р°РіРѕР»РѕРІРѕРє С‚Р°Р±Р»РёС†С‹
             std::string response = "ProductID   Name                Description         Category       Price\n";
             response += "--------------------------------------------------------------------------\n";
 
-            // Форматируем каждую строку результата
+            // Р¤РѕСЂРјР°С‚РёСЂСѓРµРј РєР°Р¶РґСѓСЋ СЃС‚СЂРѕРєСѓ СЂРµР·СѓР»СЊС‚Р°С‚Р°
             while (sqlite3_step(stmt) == SQLITE_ROW) {
                 int productId = sqlite3_column_int(stmt, 0);
                 const char* name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
@@ -1032,7 +1044,7 @@ namespace SQL_Database {
                 const char* category = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
                 double price = sqlite3_column_double(stmt, 4);
 
-                // Форматируем строку с выравниванием
+                // Р¤РѕСЂРјР°С‚РёСЂСѓРµРј СЃС‚СЂРѕРєСѓ СЃ РІС‹СЂР°РІРЅРёРІР°РЅРёРµРј
                 char buffer[256];
                 snprintf(buffer, sizeof(buffer), "%-11d %-18s %-18s %-13s %.2f\n",
                     productId,
@@ -1046,7 +1058,7 @@ namespace SQL_Database {
 
             sqlite3_finalize(stmt);
 
-            // Отправляем клиенту ответ с таблицей
+            // РћС‚РїСЂР°РІР»СЏРµРј РєР»РёРµРЅС‚Сѓ РѕС‚РІРµС‚ СЃ С‚Р°Р±Р»РёС†РµР№
             sendHttpResponse(clientSocket, "200 OK", response);
         }
         catch (const std::exception& ex) {
@@ -1057,14 +1069,14 @@ namespace SQL_Database {
 
 
     std::time_t parseDateTime(const std::string& dateTimeStr) {
-        // Преобразуем строку времени в std::tm
+        // РџСЂРµРѕР±СЂР°Р·СѓРµРј СЃС‚СЂРѕРєСѓ РІСЂРµРјРµРЅРё РІ std::tm
         std::tm tm = {};
         std::istringstream ss(dateTimeStr);
         ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
         if (ss.fail()) {
             throw std::runtime_error("Failed to parse date/time: " + dateTimeStr);
         }
-        // Преобразуем std::tm в time_t
+        // РџСЂРµРѕР±СЂР°Р·СѓРµРј std::tm РІ time_t
         return std::mktime(&tm);
     }
 
@@ -1078,7 +1090,7 @@ namespace SQL_Database {
 
         int orderId = std::stoi(orderIdStr);
 
-        // SQL-запрос для получения времени отправления и прибытия
+        // SQL-Р·Р°РїСЂРѕСЃ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РІСЂРµРјРµРЅРё РѕС‚РїСЂР°РІР»РµРЅРёСЏ Рё РїСЂРёР±С‹С‚РёСЏ
         const char* sqlSelect = "SELECT OrderDate, DeliveryDate FROM Orders WHERE OrderID = ?;";
         sqlite3_stmt* stmt;
 
@@ -1136,7 +1148,159 @@ namespace SQL_Database {
         sqlite3_finalize(stmt);
     }
 
+    void addCourier(sqlite3* db, int oppId, double speed) {
+        const char* sqlInsert = "INSERT INTO Couriers (OPPId, Speed, IsAvailable) VALUES (?, ?, 1);";
+        sqlite3_stmt* stmt;
 
+        if (sqlite3_prepare_v2(db, sqlInsert, -1, &stmt, nullptr) != SQLITE_OK) {
+            std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+            return;
+        }
 
+        sqlite3_bind_int(stmt, 1, oppId);
+        sqlite3_bind_double(stmt, 2, speed);
 
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
+        } else {
+            std::cout << "Courier added successfully!" << std::endl;
+        }
+
+        sqlite3_finalize(stmt);
+    }
+
+    void assignOrderToCourier(sqlite3* db, int orderId, int courierId) {
+        const char* sqlUpdate = "UPDATE Orders SET CourierId = ? WHERE OrderID = ?;";
+        sqlite3_stmt* stmt;
+
+        if (sqlite3_prepare_v2(db, sqlUpdate, -1, &stmt, nullptr) != SQLITE_OK) {
+            std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+            return;
+        }
+
+        sqlite3_bind_int(stmt, 1, courierId);
+        sqlite3_bind_int(stmt, 2, orderId);
+
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
+        } else {
+            std::cout << "Order assigned to courier successfully!" << std::endl;
+        }
+
+        sqlite3_finalize(stmt);
+    }
+
+    void completeOrder(sqlite3* db, int orderId) {
+        const char* sqlUpdate = "UPDATE Orders SET Status = 'Delivered', CourierId = NULL WHERE OrderID = ?;";
+        sqlite3_stmt* stmt;
+
+        if (sqlite3_prepare_v2(db, sqlUpdate, -1, &stmt, nullptr) != SQLITE_OK) {
+            std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+            return;
+        }
+
+        sqlite3_bind_int(stmt, 1, orderId);
+
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
+        } else {
+            std::cout << "Order completed successfully!" << std::endl;
+        }
+
+        sqlite3_finalize(stmt);
+    }
+
+    void handleAssignOrder(sqlite3* db, int clientSocket, const std::string& body) {
+        std::string orderIdStr = extractData(body, "orderId");
+        std::string courierIdStr = extractData(body, "courierId");
+
+        if (orderIdStr.empty() || courierIdStr.empty()) {
+            sendHttpResponse(clientSocket, "400 Bad Request", "Missing orderId or courierId");
+            return;
+        }
+
+        try {
+            int orderId = std::stoi(orderIdStr);
+            int courierId = std::stoi(courierIdStr);
+
+            assignOrderToCourier(db, orderId, courierId);
+            sendHttpResponse(clientSocket, "200 OK", "Order assigned to courier successfully");
+        } catch (const std::exception& e) {
+            sendHttpResponse(clientSocket, "400 Bad Request", "Invalid orderId or courierId format");
+        }
+    }
+
+    void handleCompleteOrder(sqlite3* db, int clientSocket, const std::string& body) {
+        std::string orderIdStr = extractData(body, "orderId");
+
+        if (orderIdStr.empty()) {
+            sendHttpResponse(clientSocket, "400 Bad Request", "Missing orderId");
+            return;
+        }
+
+        try {
+            int orderId = std::stoi(orderIdStr);
+            completeOrder(db, orderId);
+            sendHttpResponse(clientSocket, "200 OK", "Order completed successfully");
+        } catch (const std::exception& e) {
+            sendHttpResponse(clientSocket, "400 Bad Request", "Invalid orderId format");
+        }
+    }
+    void handleAddCourier(sqlite3* db, int clientSocket, const std::string& body) {
+        std::string oppIdStr = extractData(body, "oppId");
+        std::string speedStr = extractData(body, "speed");
+
+        if (oppIdStr.empty() || speedStr.empty()) {
+            sendHttpResponse(clientSocket, "400 Bad Request", "Missing oppId or speed");
+            return;
+        }
+
+        try {
+            int oppId = std::stoi(oppIdStr);
+            double speed = std::stod(speedStr);
+
+            addCourier(db, oppId, speed);
+            sendHttpResponse(clientSocket, "200 OK", "Courier added successfully");
+        }
+        catch (const std::exception& e) {
+            sendHttpResponse(clientSocket, "400 Bad Request", "Invalid oppId or speed format");
+        }
+    }
+    void handleAssignOrder(sqlite3* db, int clientSocket, const std::string& body) {
+        std::string orderIdStr = extractData(body, "orderId");
+        std::string courierIdStr = extractData(body, "courierId");
+
+        if (orderIdStr.empty() || courierIdStr.empty()) {
+            sendHttpResponse(clientSocket, "400 Bad Request", "Missing orderId or courierId");
+            return;
+        }
+
+        try {
+            int orderId = std::stoi(orderIdStr);
+            int courierId = std::stoi(courierIdStr);
+
+            assignOrderToCourier(db, orderId, courierId);
+            sendHttpResponse(clientSocket, "200 OK", "Order assigned to courier successfully");
+        }
+        catch (const std::exception& e) {
+            sendHttpResponse(clientSocket, "400 Bad Request", "Invalid orderId or courierId format");
+        }
+    }
+    void handleCompleteOrder(sqlite3* db, int clientSocket, const std::string& body) {
+        std::string orderIdStr = extractData(body, "orderId");
+
+        if (orderIdStr.empty()) {
+            sendHttpResponse(clientSocket, "400 Bad Request", "Missing orderId");
+            return;
+        }
+
+        try {
+            int orderId = std::stoi(orderIdStr);
+            completeOrder(db, orderId);
+            sendHttpResponse(clientSocket, "200 OK", "Order completed successfully");
+        }
+        catch (const std::exception& e) {
+            sendHttpResponse(clientSocket, "400 Bad Request", "Invalid orderId format");
+        }
+    }
 }

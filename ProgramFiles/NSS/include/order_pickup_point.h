@@ -1,6 +1,7 @@
 ﻿#include <string>
 #include <vector>
 #include "order.h"
+#include "courier.h"
 #include <iostream>
 #pragma once
 
@@ -18,12 +19,17 @@ private:
 
     int id;
     std::string name;
-    double coordX;
-    double coordY;
+    double coordX, coordY;
+    std::vector<Courier*> couriers;
+
 
 public:
     // Конструктор
     OPP(int id, const std::string& name, double coordX, double coordY);
+
+    //Сервис доставки
+    void add_courier(Courier* courier);
+    Courier* find_available_courier();
 
     // Геттеры
     int getId() const;

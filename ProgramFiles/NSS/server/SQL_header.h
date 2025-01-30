@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 #include <string>
 #include "sqlite3.h"
 #include <winsock2.h>
@@ -8,7 +8,7 @@
 
 namespace SQL_Database {
 
-    //для пользователей
+    //РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
     void addUser(sqlite3* db, const std::string& name, const std::string& password);
     bool loginUser(sqlite3* db, const std::string& name, const std::string& password);
     void deleteUser(sqlite3* db, const std::string& name);
@@ -16,36 +16,36 @@ namespace SQL_Database {
 
     void handleGetUserOrders(sqlite3* db, int clientSocket, const std::string& body);
 
-    //вспомогательные функции для обработки пользователей
+    //РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ С„СѓРЅРєС†РёРё РґР»СЏ РѕР±СЂР°Р±РѕС‚РєРё РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
     void handleAddUser(sqlite3* db, int clientSocket, const std::string& body);
     void handleLoginUser(sqlite3* db, int clientSocket, const std::string& body);
     void handleDeleteUser(sqlite3* db, int clientSocket, const std::string& body);
     void handleDisplayUsers(sqlite3* db, int clientSocket);
 
-    // Выполнение SQL скрипта
+    // Р’С‹РїРѕР»РЅРµРЅРёРµ SQL СЃРєСЂРёРїС‚Р°
     void executeSQLScript(sqlite3* db, const std::string& scriptPath);
-    // Обработка HTTP запроса (для различных операций)
+    // РћР±СЂР°Р±РѕС‚РєР° HTTP Р·Р°РїСЂРѕСЃР° (РґР»СЏ СЂР°Р·Р»РёС‡РЅС‹С… РѕРїРµСЂР°С†РёР№)
     void handleHttpRequest(sqlite3* db, int clientSocket, const std::string& httpRequest);
-    // Вспомогательная функция для отправки HTTP ответа
+    // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅР°СЏ С„СѓРЅРєС†РёСЏ РґР»СЏ РѕС‚РїСЂР°РІРєРё HTTP РѕС‚РІРµС‚Р°
     void sendHttpResponse(int clientSocket, const std::string& status, const std::string& body);
-    // Вспомогательная функция для извлечения данных из тела запроса
+    // Р’СЃРїРѕРјРѕРіР°С‚РµР»СЊРЅР°СЏ С„СѓРЅРєС†РёСЏ РґР»СЏ РёР·РІР»РµС‡РµРЅРёСЏ РґР°РЅРЅС‹С… РёР· С‚РµР»Р° Р·Р°РїСЂРѕСЃР°
     std::string extractData(const std::string& body, const std::string& key);
     bool isNumeric(const std::string& str);
 
 
-    //для пунктов выдачи
+    //РґР»СЏ РїСѓРЅРєС‚РѕРІ РІС‹РґР°С‡Рё
     void addPickupPoint(sqlite3* db, const std::string& name, const std::string& address, double coordX, double coordY);
     void editPickupPoint(sqlite3* db, int pickupPointID, const std::string& name, const std::string& address, double coordX, double coordY);
     void deletePickupPoint(sqlite3* db, int pickupPointID);
     void displayPickupPoints(sqlite3* db);
 
-    //вспомогательные для пунктов выдачи
+    //РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅС‹Рµ РґР»СЏ РїСѓРЅРєС‚РѕРІ РІС‹РґР°С‡Рё
     void handleAddPickupPoint(sqlite3* db, int clientSocket, const std::string& body);
     void handleEditPickupPoint(sqlite3* db, int clientSocket, const std::string& body);
     void handleDeletePickupPoint(sqlite3* db, int clientSocket, const std::string& body);
     void handleDisplayPickupPoints(sqlite3* db, int clientSocket);
 
-    //заказы
+    //Р·Р°РєР°Р·С‹
     void addOrder(sqlite3* db, const std::string& customerName, int pickupPointID, const std::vector<int>& productIds);
     void fastForwardOrdersBy24Hours(sqlite3* db);
     void markOrdersAsDelivered(sqlite3* db);
@@ -55,7 +55,7 @@ namespace SQL_Database {
     void handleCancelOrder(sqlite3* db, int clientSocket, const std::string& body);
     void handleSearchOrder(sqlite3* db, int clientSocket, const std::string& body);
 
-    //для загрузки продуктов в бд
+    //РґР»СЏ Р·Р°РіСЂСѓР·РєРё РїСЂРѕРґСѓРєС‚РѕРІ РІ Р±Рґ
     void initializeProductsTable(sqlite3* db);
 
     void handleGetProducts(sqlite3* db, int clientSocket);
@@ -63,5 +63,13 @@ namespace SQL_Database {
 
     std::time_t parseDateTime(const std::string& dateTimeStr);
     void handleOrderStatus(sqlite3* db, int clientSocket, const std::string& body);
+
+    //РЎРµСЂРІРёСЃ РґРѕСЃС‚Р°РІРєРё
+    void addCourier(sqlite3* db, int oppId, double speed);
+    void assignOrderToCourier(sqlite3* db, int orderId, int courierId);
+    void completeOrder(sqlite3* db, int orderId);
+    handleAddCourier(sqlite3* db, int clientSocket, const std::string& body);
+    void handleAssignOrder(sqlite3* db, int clientSocket, const std::string& body);
+    void handleCompleteOrder(sqlite3* db, int clientSocket, const std::string& body);
 }
 

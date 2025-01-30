@@ -141,6 +141,20 @@ void OPP::printOPPInfo() const {
         << ", Координаты: (" << coordX << ", " << coordY << ")\n";
 }
 
+//Сервис доставки
+void OPP::add_courier(Courier* courier) {
+    couriers.push_back(courier);
+}
+
+Courier* OPP::find_available_courier() {
+    for (auto& courier : couriers) {
+        if (courier->is_available()) {
+            return courier;
+        }
+    }
+    return nullptr;
+}
+
 void FunctionsOPPControl::addOPPToFile(const OPP& opp) {
     std::ofstream file("pvz_data.txt", std::ios::app);  // Открытие файла в режиме добавления
     if (file.is_open()) {
